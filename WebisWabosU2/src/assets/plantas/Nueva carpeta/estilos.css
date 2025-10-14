@@ -1,0 +1,33 @@
+/* Estilo general */
+body {
+  margin: 0;
+  font-family: sans-serif;
+  background-color: #f4f4f4;
+}
+
+/* Scrollbar personalizado (WebKit) */
+::-webkit-scrollbar {
+  width: 100px;
+  background-color: black; /* Color del fondo de la barra */
+}
+
+::-webkit-scrollbar-track {
+  background-color: black;
+}
+
+::-webkit-scrollbar-thumb {
+    background: url('sol.png') no-repeat center center;
+    background-size: 100px 100px;
+    border-radius: 50px;
+    
+}
+
+::-webkit-scrollbar-thumb:hover {
+  filter: brightness(1.2);
+}
+
+/* Firefox: solo colores */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: yellow black;
+}
