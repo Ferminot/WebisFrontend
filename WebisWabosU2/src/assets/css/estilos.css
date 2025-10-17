@@ -5,7 +5,7 @@
 }
 
 body {
-  background-image: url("img/FondoPasto.png");
+  background-image: url("src/assets/img/FondoPasto.png");
   background-repeat: repeat;
   background-size: 35%;
   margin: 0;
@@ -20,7 +20,11 @@ body {
 
 
 
-
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
 
 
 
