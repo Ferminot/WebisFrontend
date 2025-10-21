@@ -1,0 +1,179 @@
+#Macetas {
+  background-image: url("src/assets/img/FondoTecho.png"); 
+  background-repeat: repeat;
+  background-size: 50%;
+  min-height: 100vh;
+}
+
+#HeadIntroduccion {
+  background: linear-gradient(180deg, #5C4033 0%, #aa3b2c 100%);
+  margin: 40px auto;          /* separa del resto de la página */
+  padding: 60px 40px;         /* espacio interno */
+  border-radius: 15px;        /* bordes redondeados */
+  max-width: 1200px;          /* ancho máximo */
+  height: 710px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+
+
+.text-container {
+  text-align: center;
+  margin-bottom: 1px;
+  color: #fff;
+  text-shadow: 1px 1px 3px #000;
+}
+
+.title {
+  font-size: 4rem;
+  margin-bottom: 10px;
+}
+
+.subtitle {
+  font-size: 2rem;
+  color: #fff;
+}
+
+.images-row {
+  display: flex;
+  width: 100%;
+  justify-content: space-between; 
+  margin-bottom: -50px;
+}
+
+
+
+.bottom-row {
+  justify-content: center;
+  gap: 20px;
+}
+
+.macetero-image {
+  width: 200px;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 10px;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.macetero-image:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+}
+
+.decoracion-izquierdaa{
+  position: absolute;
+  top: 18%; 
+  transform: translateY(-10%);
+  width: 300px; 
+  height: auto;
+
+}
+.decoracion-derechaa {
+  position: absolute;
+  top: 70%; 
+  transform: translateY(-80%);
+  width: 300px; 
+  height: auto;
+}
+
+.decoracion-izquierdaa {
+  left: 5px; 
+
+}
+
+.decoracion-derechaa {
+  right: 50px;
+}
+
+
+
+
+
+
+#maceteros_mid {
+  margin: 60px auto;
+  padding: 40px 20px;
+  max-width: 1400px;
+}
+
+.texto-container {
+  text-align: center;
+  margin-bottom: 30px;
+  padding: 40px 20px;
+  background: rgba(0, 0, 0, 0.6); /* fondo negro semi-transparente */
+  border-radius: 15px;
+  display: inline-block; /* ajusta el ancho al contenido */
+}
+
+.titulos-maceteros {
+  font-size: 4rem;
+  color: #ffefba; /* amarillo claro para resaltar */
+  margin-bottom: 10px;
+  text-shadow: 1px 1px 3px #000;
+}
+
+.subtitulo-maceteros {
+  font-size: 1.8rem;
+  color: #fff;
+  text-shadow: 1px 1px 2px #000;
+}
+
+
+/* Grid de maceteros */
+.maceteros-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* 4 columnas */
+  gap: 100px; /* espacio entre maceteros */
+}
+
+/* Cada macetero */
+.macetero-item {
+  background: linear-gradient(180deg, #5a0066 0%, #fda785 100%);
+  border-radius: 10px;
+  padding: 15px;
+  text-align: center;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.macetero-item img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+.macetero-item h3 {
+  font-size: 1.1rem;
+  margin-bottom: 5px;
+}
+
+.macetero-item p {
+  font-size: 1rem;
+  color: #555;
+}
+
+/* Efecto hover */
+.macetero-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+/* Responsivo: 2 columnas en pantallas medianas, 1 en móviles */
+@media (max-width: 900px) {
+  .maceteros-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 500px) {
+  .maceteros-grid {
+    grid-template-columns: 1fr;
+  }
+}
