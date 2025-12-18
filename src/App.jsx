@@ -8,6 +8,11 @@ import './assets/css/cart.css';
 import Carrito from "./assets/js/Carrito";
 import Login from "./assets/js/Login";
 import Register from "./assets/js/Register";
+import { obtenerPlantas } from "./assets/js/plantaService";
+import { obtenerMacetas } from "./assets/js/macetaService";
+import { obtenerServicios } from "./assets/js/servicioService";
+
+
 
 // Canciones por sección
 const canciones = {
@@ -26,8 +31,11 @@ function App() {
   const [volumen] = useState(1);
   const [seccionActiva, setSeccionActiva] = useState("plantas");
   const [animando, setAnimando] = useState(false);
-  const [cart, setCart] = useState([]);
   const [open, setOpen] = useState(false);
+  const [plantas, setPlantas] = useState([]);
+  const [maceteros, setMaceteros] = useState([]);
+  const [servicios, setServicios] = useState([]);
+  const [cart, setCart] = useState([]);
 
   // Cambiar sección
   const cambiarSeccion = (seccion) => {
@@ -44,6 +52,10 @@ function App() {
   const [currentUser, setCurrentUser] = useState(
     localStorage.getItem("auth_currentUser") || null
   );
+  const isAdmin = currentUser === "ADMIN";
+  console.log("currentUser:", currentUser);
+  console.log("isAdmin:", isAdmin);
+
   const handleLogin = (username) => {
     setCurrentUser(username);
     localStorage.setItem("auth_currentUser", username);
@@ -97,8 +109,160 @@ function App() {
 
   // Función para agregar producto al carrito
   const agregarAlCarrito = (producto) => {
-    setCart(prev => [...prev, producto]);
+    const productoNormalizado = {
+      ...producto,
+      valor: Number(producto.valor ?? 0), // 🔒 SIEMPRE número
+    };
+
+    setCart((prev) => [...prev, productoNormalizado]);
   };
+
+
+  const guardarPrecioPlanta = async (id, nuevoValor) => {
+  try {
+    const resp = await fetch(
+      `http://localhost:8080/plantas/${id}/precio`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ valor: nuevoValor })
+      }
+    );
+
+    if (!resp.ok) {
+      alert("Error al guardar el precio");
+      return;
+    }
+
+    alert("Precio actualizado correctamente");
+  } catch (e) {
+    alert("Error de conexión");
+  }
+};
+
+  const guardarPrecioMaceta = async (id, nuevoValor) => {
+  try {
+    const token = localStorage.getItem("auth_token");
+
+    const resp = await fetch(`http://localhost:8080/macetas/${id}/precio`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        valor: Number(nuevoValor),
+      }),
+    });
+
+    if (!resp.ok) {
+      alert("Error al guardar el precio de la maceta");
+      return;
+    }
+
+    setMaceteros((prev) =>
+      prev.map((m) =>
+        m.id === id ? { ...m, valor: Number(nuevoValor) } : m
+      )
+    );
+
+    alert("Precio de maceta actualizado correctamente");
+  } catch (error) {
+    console.error(error);
+    alert("Error de conexión");
+  }
+};
+
+
+  const guardarPrecioServicio = async (id, nuevoValor) => {
+  try {
+    const token = localStorage.getItem("auth_token");
+
+    const resp = await fetch(`http://localhost:8080/servicios/${id}/precio`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        valor: Number(nuevoValor),
+      }),
+    });
+
+    if (!resp.ok) {
+      alert("Error al guardar el precio del servicio");
+      return;
+    }
+
+    setServicios((prev) =>
+      prev.map((s) =>
+        s.id === id ? { ...s, valor: Number(nuevoValor) } : s
+      )
+    );
+
+    alert("Precio de servicio actualizado correctamente");
+  } catch (error) {
+    console.error(error);
+    alert("Error de conexión");
+  }
+};
+
+
+
+  // Función para eliminar productos del carrito
+  const eliminarDelCarrito = (index) => {
+    setCart(prev => prev.filter((_, i) => i !== index));
+  };
+
+
+  //Traer Plantas BackEnd
+  useEffect(() => {
+  const fetchPlantas = async () => {
+    try {
+      const data = await obtenerPlantas(); 
+      setPlantas(data); 
+    } catch (error) {
+      console.error("Error cargando plantas:", error);
+    }
+  };
+
+  fetchPlantas();
+  }, []);
+
+    //traer macetas del backend
+  useEffect(() => {
+    const cargarMaceteros = async () => {
+      const datos = await obtenerMacetas();
+      setMaceteros(datos);
+    };
+    cargarMaceteros();
+  }, []);
+
+    //servicios backend
+  useEffect(() => {
+    const cargarServicios = async () => {
+      try {
+        const data = await obtenerServicios();
+        setServicios(data);
+      } catch (error) {
+        console.error("Error al cargar servicios:", error);
+      }
+    };
+
+    cargarServicios();
+  }, []);
+
+  useEffect(() => {
+    const cargarDatos = async () => {
+      setPlantas(await obtenerPlantas());
+      setMaceteros(await obtenerMacetas());
+      setServicios(await obtenerServicios());
+    };
+    cargarDatos();
+  }, []);
+
+  
+
 
   // Navbar
   const Navbar = () => (
@@ -249,7 +413,6 @@ function App() {
 
 
 
-
   return (
     <>
       
@@ -303,104 +466,77 @@ function App() {
 
 
                   <section id="Plantas-mid">
-                    
-                      <div className="productos-container">
-                        {[
-                          {
-                            nombre: "Girasol",
-                            precio: 2500,
-                            imgPrincipal: "src/assets/plantas/girasol.png",
-                            imgHover: "https://images.unsplash.com/photo-1689067316514-4618c01c2e4c?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1yZWxhdGVkfDE1fHx8ZW58MHx8fHx8",
-                            descripcion: "Planta que necesita un monton de sol!!! resultando en que produzca flores muy brillantes."
-                          },
-                          {
-                            nombre: "Guisantes",
-                            precio: 5000,
-                            imgPrincipal: "src/assets/plantas/im-peashooter-ask-me-anything-v0-jo9i03as70je1.png",
-                            imgHover: "https://rkd.es/blog/wp-content/uploads/2021/08/Como-cultivar-guisantes-600x321.jpg",
-                            descripcion: "Planta vigorosa y fácil de cultivar, ideal para huertos urbanos. Florece en primavera."
-                          },
-                          {
-                            nombre: "Nuez",
-                            precio: 5000,
-                            imgPrincipal: "src/assets/img/Nuez.webp",
-                            imgHover: "https://media.admagazine.com/photos/62286e22818965ae9b8974e8/master/w_1600%2Cc_limit/GettyImages-929200940.jpg",
-                            descripcion: "Árbol robusto que produce nueces nutritivas, perfecto para climas templados."
-                          },
-                          {
-                            nombre: "Cactus",
-                            precio: 1500,
-                            imgPrincipal: "src/assets/img/Cactus.webp",
-                            imgHover: "src/assets/img/saguaro-cacti-in-the-desert-imaginegolf.jpg",
-                            descripcion: "Planta suculenta resistente y de bajo mantenimiento, ideal para decorar espacios con un toque natural y moderno."
-                          },
-                          {
-                            nombre: "Planta Carnivora",
-                            precio: 30000,
-                            imgPrincipal: "src/assets/img/Plsnts_Carro%3FivoraHD.webp",
-                            imgHover: "https://cloudfront-us-east-1.images.arcpublishing.com/infobae/L5SHHQWIN5AUJHUTFD7OM7U4SQ.jpg",
-                            descripcion: "Planta fascinante, atrapa insectos para obtener nutrientes, perfecta para amantes de la naturaleza exótica."
-                          },
-                          {
-                            nombre: "Calabaza",
-                            precio: 3500,
-                            imgPrincipal: "https://preview.redd.it/squash-pvz-v0-gamdf9o00f0d1.png?width=511&format=png&auto=webp&s=a632d48fef15fc8fc3658a2c291a34c3e414b9fb",
-                            imgHover: "https://tb-static.uber.com/prod/image-proc/processed_images/207d19cb4f911e085ffeba8aa3c451e2/f9586c36ab7db84d09b777cee8c829b1.jpeg",
-                            descripcion: "Planta trepadora que ofrece frutos grandes y nutritivos, ideal para jardines y recetas tradicionales."
-                          },
-                          {
-                            nombre: "Cebollin",
-                            precio: 3000,
-                            imgPrincipal: "src/assets/img/Hd_bonk.webp",
-                            imgHover: "https://i0.wp.com/foodandwineespanol.com/wp-content/uploads/2024/07/Cebollin.webp?w=600&ssl=1",
-                            descripcion: "Hierba aromática de sabor suave a cebolla, perfecta para realzar platos frescos y cocinar con estilo."
-                          },
-                          {
-                            nombre: "Repollo",
-                            precio: 4500,
-                            imgPrincipal: "https://i.redd.it/what-cabbage-pult-design-do-you-like-more-v0-di1t41ofhp7f1.png?width=1200&format=png&auto=webp&s=67f9df2be7dc4b8ca43c52ba45778615873df961",
-                            imgHover: "https://upload.wikimedia.org/wikipedia/commons/2/2c/Kalkar_-_Wei%C3%9Fkohl_01_ies.jpg",
-                            descripcion: "Verdura crujiente y nutritiva, ideal para ensaladas frescas y guisos tradicionales."
-                          },
-                          {
-                            nombre: "Sandia",
-                            precio: 6000,
-                            imgPrincipal: "https://i.pinimg.com/originals/a4/ca/46/a4ca4638b8ce9ec26bf6fed9410f3b65.png",
-                            imgHover: "https://huertafamiliar.cl/wp-content/uploads/2024/10/SANDIA-CRIMSON-SWEET-2-w.jpg",
-                            descripcion: "Fruta refrescante y jugosa, perfecta para los días calurosos y como un dulce natural lleno de sabor."
-                          },
-                          {
-                            nombre: "Cereza",
-                            precio: 10000,
-                            imgPrincipal: "src/assets/img/Cherry_Bomb.webp",
-                            imgHover: "https://cdn.blueberriesconsulting.com/2024/02/Exportacion-de-cerezas-chilenas-casi-se-triplica-en-enero-2024-Chinos-compran-el-93.jpg",
-                            descripcion: "Pequeña fruta dulce y vibrante, ideal para disfrutar fresca o en postres deliciosos."
-                          },
-                        ].map((producto, index) => (
+                     
+                    <div className="productos-container">
+                      {plantas.length === 0 ? (
+                        <p>Cargando plantas...</p>
+                      ) : (
+                        plantas.map((producto, index) => (
                           <div
                             key={index}
                             className="producto"
                             onClick={() =>
                               agregarAlCarrito({
                                 nombre: producto.nombre,
-                                precio: producto.precio,
-                                img: producto.imgPrincipal,
+                                valor: producto.valor,
+                                img: producto.img_principal,
                               })
                             }
                             style={{ cursor: "pointer" }}
                           >
                             <div className="imagen-hover">
-                              <img src={producto.imgPrincipal} alt={producto.nombre} className="img-principal" />
-                              <img src={producto.imgHover} alt={`${producto.nombre} Alternativa`} className="img-hover" />
+                              <img
+                                src={producto.img_principal}   // <-- exacto
+                                alt={producto.nombre}
+                                className="img-principal"
+                              />
+                              <img
+                                src={producto.img_hover}       // <-- exacto
+                                alt={`${producto.nombre} Alternativa`}
+                                className="img-hover"
+                              />
                             </div>
                             <div className="info-producto">
                               <h3>{producto.nombre}</h3>
                               <p className="descripcion">{producto.descripcion}</p>
-                              <p>☀️ ${producto.precio.toLocaleString()}</p>
+                              {isAdmin ? (
+                                <>
+                                  <input
+                                    type="number"
+                                    value={producto.valor}
+                                    onChange={(e) =>
+                                      setPlantas(prev =>
+                                        prev.map(p =>
+                                          p.id === producto.id
+                                            ? { ...p, valor: Number(e.target.value)  }
+                                            : p
+                                        )
+                                      )
+                                    }
+                                  />
+
+                                  {/* 🔹 BOTÓN GUARDAR */}
+                                  <button
+                                    onClick={() =>
+                                      guardarPrecioPlanta(producto.id, producto.valor)
+                                    }
+                                    style={{ color: "gold", marginTop: "6px" }}
+                                  >
+                                    Guardar
+                                  </button>
+                                </>
+                              ) : (
+                                <p style={{ color: "gold", fontWeight: "bold" }}>
+                                  ☀️ ${producto.valor}
+                                </p>
+                              )}
+
+
                             </div>
                           </div>
-                        ))}
-                      </div>
+                        ))
+                      )}
+                    </div>
 
 
                   </section>
@@ -751,111 +887,90 @@ function App() {
 
 
 
-
                   <section id="maceteros_mid">
-
                     <div className="texto-container">
                       <h1 className="titulos-maceteros">Maceteros Mortales</h1>
                       <p className="subtitulo-maceteros">
                         Pon tus plantas aquí… si no, los zombies lo harán por ti.
                       </p>
                     </div>
-                    <div className="maceteros-grid">
-                      {[
-                        {
-                          nombre: "Macetero 1",
-                          precio: 15000,
-                          img: "src/assets/img/Maceteromoderno.png",
-                        },
-                        {
-                          nombre: "Macetero 2",
-                          precio: 12000,
-                          img: "src/assets/img/Maceterorustico.png",
-                        },
-                        {
-                          nombre: "Macetero 3",
-                          precio: 18000,
-                          img: "https://huertosalma.cl/wp-content/uploads/2021/02/Macetero-Terracota-HUertos-Alma-600x559.png",
-                        },
-                        {
-                          nombre: "Macetero 4",
-                          precio: 20000,
-                          img: "src/assets/img/maceta4.webp",
-                        },
-                        {
-                          nombre: "Macetero 5",
-                          precio: 17000,
-                          img: "src/assets/img/maceta5.webp",
-                        },
-                        {
-                          nombre: "Macetero 6",
-                          precio: 14000,
-                          img: "src/assets/img/maceta6.webp",
-                        },
-                        {
-                          nombre: "Macetero 7",
-                          precio: 16000,
-                          img: "src/assets/img/maceta7.webp",
-                        },
-                        {
-                          nombre: "Macetero 8",
-                          precio: 19000,
-                          img: "src/assets/img/maceta8.webp",
-                        },
-                        {
-                          nombre: "Macetero 9",
-                          precio: 13000,
-                          img: "src/assets/img/maceta9.png",
-                        },
-                        {
-                          nombre: "Macetero 10",
-                          precio: 15000,
-                          img: "src/assets/img/maceta10.webp",
-                        },
-                        {
-                          nombre: "Macetero 11",
-                          precio: 17000,
-                          img: "src/assets/img/maceta11.webp",
-                        },
-                        {
-                          nombre: "Macetero 12",
-                          precio: 20000,
-                          img: "src/assets/img/maceta12.webp",
-                        },
-                      ].map((macetero, index) => (
-                        <div
-                          key={index}
-                          className="macetero-item"
-                          onClick={() =>
-                            agregarAlCarrito({
-                              nombre: macetero.nombre,
-                              precio: macetero.precio,
-                              img: macetero.img,
-                            })
-                          }
-                          style={{ cursor: "pointer" }}
-                        >
-                          <img src={macetero.img} alt={macetero.nombre} />
-                          <h3 style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                            <img
-                              src={macetero.img}
-                              alt={macetero.nombre}
-                              style={{
-                                width: "30px",
-                                height: "30px",
-                                objectFit: "cover",
-                                borderRadius: "4px",
-                              }}
-                            />
-                            {macetero.nombre}
-                          </h3>
-                          <p>☀️ ${macetero.precio.toLocaleString()}</p>
-                        </div>
-                      ))}
-                    </div>
 
-                    
+                    <div className="maceteros-grid">
+                      {maceteros.length === 0 ? (
+                        <p>Cargando maceteros...</p>
+                      ) : (
+                        maceteros.map((macetero, index) => (
+                          <div
+                            key={index}
+                            className="macetero-item"
+                            onClick={() =>
+                              agregarAlCarrito({
+                                nombre: macetero.nombre,
+                                valor: macetero.valor,
+                                img: macetero.imgPrincipal, // o macetero.img si es estático
+                              })
+                            }
+                            style={{ cursor: "pointer" }}
+                          >
+                            <img src={macetero.imgPrincipal || macetero.img} alt={macetero.nombre} />
+                            <h3 style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                              <img
+                                src={macetero.imgPrincipal || macetero.img}
+                                alt={macetero.nombre}
+                                style={{
+                                  width: "30px",
+                                  height: "30px",
+                                  objectFit: "cover",
+                                  borderRadius: "4px",
+                                }}
+                              />
+                              {macetero.nombre}
+                            </h3>
+                            {isAdmin ? (
+                              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                                <input
+                                  type="number"
+                                  value={macetero.valor}
+                                  onChange={(e) =>
+                                    setMaceteros((prev) =>
+                                      prev.map((m, i) =>
+                                        i === index
+                                          ? { ...m, valor: Number(e.target.value) }
+                                          : m
+                                      )
+                                    )
+                                  }
+                                  style={{
+                                    width: "80px",
+                                    color: "gold",
+                                    fontWeight: "bold",
+                                  }}
+                                />
+
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation(); // evita agregar al carrito
+                                    guardarPrecioMaceta(macetero.id, macetero.valor);
+                                  }}
+                                >
+                                  Guardar
+                                </button>
+                              </div>
+                            ) : (
+                              <p>
+                                ☀️ $
+                                {(macetero.valor ?? macetero.precio)?.toLocaleString()}
+                              </p>
+                            )}
+
+                          </div>
+                        ))
+                      )}
+                    </div>
                   </section>
+
+
+                  
 
 
 
@@ -908,6 +1023,7 @@ function App() {
 
                   </section>
 
+              
                   <section id="MantenimientoJardin">
                     <div className="mantenimiento-container">
                       <div className="mantenimiento-texto">
@@ -929,56 +1045,80 @@ function App() {
                             agregarAlCarrito({
                               nombre: "Servicio Crazy Dave (Mantenimiento)",
                               img: "src/assets/img/Zomboni_almanac_icon.webp",
-                              precio: 40000, 
+                              precio: 40000,
                             })
                           }
+                          style={{ cursor: "pointer" }}
                         />
                       </div>
                     </div>
                   </section>
 
+
+
                   <section id="HerramientasNocturnas">
                     <div className="herramientas-grid">
-                      {[
-                        {
-                          nombre: "Pala de la Medianoche",
-                          descripcion: "Remueve y reubica plantas sin despertar a los zombies.",
-                          img: "src/assets/img/pala.png",
-                          precio: 5000,
-                        },
-                        {
-                          nombre: "Regadera de Luna",
-                          descripcion: "Nutre tus plantas con agua encantada bajo la luz nocturna.",
-                          img: "src/assets/img/WateringCan.webp",
-                          precio: 4000,
-                        },
-                        {
-                          nombre: "Acelerador de crecimiento Maxium 5000",
-                          descripcion: "Proporciona un impulso de poder cuando más lo necesitan.",
-                          img: "https://static.wikia.nocookie.net/plantsvszombies/images/0/0e/Plant_Food2.png",
-                          precio: 5000,
-                        },
-                        {
-                          nombre: "Podadora Fantasma",
-                          descripcion: "Actúa automáticamente ante cualquier amenaza zombie.",
-                          img: "src/assets/img/Lawnmower2.webp",
-                          precio: 80000,
-                        },
-                      ].map((herramienta, index) => (
-                        <div
-                          key={index}
-                          className="herramienta-item"
-                          onClick={() => agregarAlCarrito({ nombre: herramienta.nombre, precio: herramienta.precio, img: herramienta.img })}
-                          style={{ cursor: "pointer" }}
-                        >
-                          <img src={herramienta.img} alt={herramienta.nombre} />
-                          <h3>{herramienta.nombre}</h3>
-                          <p>{herramienta.descripcion}</p>
-                          <span className="precio">💰 ${herramienta.precio.toLocaleString()}</span>
-                        </div>
-                      ))}
+                      {servicios.length === 0 ? (
+                        <p>Cargando herramientas...</p>
+                      ) : (
+                        servicios.map((herramienta, index) => (
+                          <div
+                            key={index}
+                            className="herramienta-item"
+                            onClick={() =>
+                              agregarAlCarrito({
+                                nombre: herramienta.nombre,
+                                valor: herramienta.valor,
+                                img: herramienta.img_principal,
+                              })
+                            }
+                            style={{ cursor: "pointer" }}
+                          >
+                            <img src={herramienta.img_principal} alt={herramienta.nombre} />
+                            <h3>{herramienta.nombre}</h3>
+                            <p>{herramienta.descripcion}</p>
+                            {isAdmin ? (
+                              <>
+                                <input
+                                  type="number"
+                                  value={herramienta.valor}
+                                  onClick={(e) => e.stopPropagation()}
+                                  onChange={(e) =>
+                                    setServicios((prev) =>
+                                      prev.map((s) =>
+                                        s.id === herramienta.id
+                                          ? { ...s, valor: e.target.value }
+                                          : s
+                                      )
+                                    )
+                                  }
+                                />
+
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    guardarPrecioServicio(herramienta.id, herramienta.valor);
+                                  }}
+                                  style={{ marginTop: "6px" }}
+                                >
+                                  Guardar
+                                </button>
+                              </>
+                            ) : (
+                              <span
+                                className="precio"
+                                style={{ color: "#FFD700", fontWeight: "bold" }}
+                              >
+                                💰 ${herramienta.valor.toLocaleString()}
+                              </span>
+                            )}
+
+                          </div>
+                        ))
+                      )}
                     </div>
                   </section>
+
 
 
 
@@ -998,7 +1138,7 @@ function App() {
         <audio ref={musicaRef} />
 
         {/* Ventana del carrito */}
-        <Carrito open={open} setOpen={setOpen} cart={cart} setCart={setCart} />
+        <Carrito open={open} setOpen={setOpen} cart={cart} setCart={setCart} eliminarDelCarrito={eliminarDelCarrito} />
         {/* Modales de Login y Register */}
         {showLogin && <Login onLogin={handleLogin} />}
         {showRegister && <Register onRegisterSuccess={handleRegisterSuccess} />}

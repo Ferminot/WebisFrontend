@@ -23,23 +23,37 @@ export default function Register({ onRegisterSuccess }) {
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const validationErrors = validate();
     setError(validationErrors);
 
     if (Object.keys(validationErrors).length === 0) {
-      // Guardar en localStorage
-      const usuariosRegistrados = JSON.parse(localStorage.getItem("usuariosRegistrados")) || [];
-      // Evitar duplicados
-      if (usuariosRegistrados.some(u => u.username === username.trim())) {
-        setError({ username: "Este usuario ya existe." });
-        return;
-      }
-      usuariosRegistrados.push({ username: username.trim(), email, password });
-      localStorage.setItem("usuariosRegistrados", JSON.stringify(usuariosRegistrados));
+      try {
+        const response = await fetch("http://localhost:8080/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            usuario: username.trim(),
+            correo: email.trim(),
+            contrasena: password
+          }),
+        });
 
-      onRegisterSuccess({ username: username.trim(), email, password });
+        if (!response.ok) {
+          const errorMsg = await response.text(); 
+          setError({ server: errorMsg });
+          return;
+        }
+
+        const data = await response.json();
+        onRegisterSuccess(data);
+
+      } catch (error) {
+       
+        const message = error instanceof Error ? error.message : "Error al conectar con el servidor.";
+        setError({ server: message });
+      }
     }
   };
 
@@ -82,6 +96,8 @@ export default function Register({ onRegisterSuccess }) {
           style={{ padding: "10px", width: "100%", marginBottom: "15px" }}
         />
         {error.confirmPassword && <p style={{ color: "red" }}>{error.confirmPassword}</p>}
+
+        {error.server && <p style={{ color: "red" }}>{error.server}</p>}
 
         <button type="submit" style={{ padding: "10px 20px", width: "100%" }}>
           Registrar

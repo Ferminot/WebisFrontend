@@ -14,7 +14,7 @@ export default function useScripts() {
         thumb.style.top = `${ratio * trackHeight}px`;
       };
 
-      // Actualiza el thumb al hacer scroll o cambiar tamaño
+    
       contenido.addEventListener('scroll', updateThumb);
       window.addEventListener('resize', updateThumb);
 
